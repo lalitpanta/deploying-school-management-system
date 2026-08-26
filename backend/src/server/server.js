@@ -1,4 +1,6 @@
-require("dotenv").config({ path: require("path").resolve(__dirname, "..", "..", ".env") });
+require("dotenv").config({
+  path: require("path").resolve(__dirname, "..", "..", ".env"),
+});
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -10,14 +12,16 @@ const routes = require("../routing/index");
 // ── CORS Middleware ────────────────────────────────────────────────
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-      "http://localhost:3000",
-      "http://localhost:5000",
-      "http://localhost:5001",
-    ],
+    origin: process.env.FRONTEND_URL
+      ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim())
+      : [
+          "http://localhost:5173",
+          "http://localhost:5174",
+          "http://localhost:5175",
+          "http://localhost:3000",
+          "http://localhost:5000",
+          "http://localhost:5001",
+        ],
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Tenant-ID"],
     credentials: true,
@@ -56,7 +60,7 @@ app.use((req, res) => {
 
 // Run DB migrations automatically on startup unless disabled
 const { exec } = require("child_process");
-const PORT = 5000;
+const PORT = Number(process.env.PORT) || 5000;
 const migrationsCwd = path.resolve(__dirname, "..", "..");
 
 const startApp = () => {

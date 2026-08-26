@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+frontend/dist/
+frontend/dist-ssr/
+
+# Runtime data and generated files
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/tmp/
+tmp/
+*.log
+
+# Local tooling and operating-system files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.local

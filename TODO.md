@@ -1,0 +1,5 @@
+- [ ] Refactor `frontend/src/components/settings/ResultManagementModule.jsx` UI to match other settings modules (dark indigo layout)
+- [ ] Replace custom modals in ResultManagementModule with shared `SettingsModal`
+- [ ] Update modal forms to use consistent grid-based layout + label/input styles
+- [ ] Align page header/buttons/tables styling with other modules
+- [ ] Run frontend build/dev check for TS/JS errors
