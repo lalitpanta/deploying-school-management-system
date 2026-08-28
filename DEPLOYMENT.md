@@ -107,7 +107,7 @@ npm ci
 Create `frontend/.env.production` on the server, or set the value in the shell:
 
 ```text
-VITE_API_BASE_URL=https://api.example.com
+VITE_API_BASE_URL=https://api.benchmarkassociates.com.np
 VITE_APP_NAME=SchoolMIS
 ```
 

@@ -1,5 +1,7 @@
 # SchoolMIS — Mobile-focused System Documentation
 
+For the production URL, authentication rules, headers, endpoint catalog, upload URLs, and Postman setup, see [API_REFERENCE.md](API_REFERENCE.md).
+
 ## Overview
 
 Purpose: provide a detailed, module-by-module description of the system's core workflows and APIs so you can adapt the web frontend into a mobile application. This document focuses on the behavior, required API calls, headers/payloads, important local storage keys, and mobile migration considerations.

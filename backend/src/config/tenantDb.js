@@ -2,6 +2,11 @@ const { Pool } = require("pg");
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 
+const useSsl = String(process.env.DB_SSL || "").toLowerCase() === "true";
+const rejectUnauthorized =
+  String(process.env.DB_SSL_REJECT_UNAUTHORIZED || "true").toLowerCase() !==
+  "false";
+
 // Central database pool (for admin and tenant metadata)
 const centralPool = new Pool({
   host: process.env.DB_HOST,
@@ -9,6 +14,7 @@ const centralPool = new Pool({
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
+  ssl: useSsl ? { rejectUnauthorized } : false,
   min: parseInt(process.env.DB_POOL_MIN, 10),
   max: parseInt(process.env.DB_POOL_MAX, 10),
   idleTimeoutMillis: 30000,
@@ -42,6 +48,7 @@ function getTenantPool(tenantId, tenantDbName) {
       database: tenantDbName,
       user: process.env.TENANT_DB_USER || process.env.DB_USER,
       password: process.env.TENANT_DB_PASSWORD || process.env.DB_PASSWORD,
+      ssl: useSsl ? { rejectUnauthorized } : false,
       min: parseInt(process.env.DB_POOL_MIN, 10),
       max: parseInt(process.env.DB_POOL_MAX, 10),
       idleTimeoutMillis: 30000,

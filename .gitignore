@@ -16,6 +16,7 @@ backend/uploads/*
 backend/tmp/
 tmp/
 *.log
+*.zip
 
 # Local tooling and operating-system files
 .vscode/*
