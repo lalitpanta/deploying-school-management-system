@@ -1,0 +1,389 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Initialize Advanced Assignment State Variables": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416561735
+      },
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416584321
+      },
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417100604
+      }
+    ],
+    "2. Implement Helper Functions for Advanced Workflow": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416563688
+      },
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416584977
+      },
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417101244
+      }
+    ],
+    "3. Build Weekday Selection Dropdown Component": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416565930
+      },
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417107013
+      }
+    ],
+    "4. Build Specific Dates Multi-Select Grid Component": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416566183
+      },
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417107581
+      }
+    ],
+    "5. Build Classification Selection Dropdown Component": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416566387
+      },
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417108222
+      }
+    ],
+    "6. Build Combined Selection Preview Box Component": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416566597
+      },
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417108817
+      }
+    ],
+    "7. Build Assignment Button and Status Message Display Component": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416566812
+      },
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417109554
+      }
+    ],
+    "8. Assemble Advanced Assignments UI Section": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416567097
+      },
+      {
+        "executionId": "2ad16dd5-271d-4ffb-9c20-e82d3adf5d51",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417561158
+      }
+    ],
+    "9. Implement Weekday Selection Handler": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416567356
+      },
+      {
+        "executionId": "2ad16dd5-271d-4ffb-9c20-e82d3adf5d51",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417562606
+      }
+    ],
+    "10. Implement Specific Date Selection Handler": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416567548
+      },
+      {
+        "executionId": "2ad16dd5-271d-4ffb-9c20-e82d3adf5d51",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417562783
+      }
+    ],
+    "11. Implement Classification Selection Handler": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416567764
+      },
+      {
+        "executionId": "2ad16dd5-271d-4ffb-9c20-e82d3adf5d51",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417562995
+      }
+    ],
+    "12. Implement Validation Logic": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416567962
+      },
+      {
+        "executionId": "2ad16dd5-271d-4ffb-9c20-e82d3adf5d51",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417563496
+      }
+    ],
+    "13. Implement Weekday Assignment API Call": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416568179
+      },
+      {
+        "executionId": "2ad16dd5-271d-4ffb-9c20-e82d3adf5d51",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417564054
+      }
+    ],
+    "14. Implement Specific Date Assignment API Call": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416568379
+      },
+      {
+        "executionId": "2ad16dd5-271d-4ffb-9c20-e82d3adf5d51",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417564590
+      }
+    ],
+    "15. Implement Combined Assignment Orchestration": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416568576
+      },
+      {
+        "executionId": "2ad16dd5-271d-4ffb-9c20-e82d3adf5d51",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417565245
+      }
+    ],
+    "16. Implement Assignment Click Handler and Message Management": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416568754
+      },
+      {
+        "executionId": "2ad16dd5-271d-4ffb-9c20-e82d3adf5d51",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788417566187
+      }
+    ],
+    "17. Write Unit Tests for State Management": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416568944
+      }
+    ],
+    "18. Write Unit Tests for Weekday Selection": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416569133
+      }
+    ],
+    "19. Write Unit Tests for Specific Date Selection": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416569330
+      }
+    ],
+    "20. Write Unit Tests for Classification Selection": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416569524
+      }
+    ],
+    "21. Write Unit Tests for Combined Selection State": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416569717
+      }
+    ],
+    "22. Write Unit Tests for Validation": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416569911
+      }
+    ],
+    "23. Write Unit Tests for API Call Building": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416570222
+      }
+    ],
+    "24.* Write Property-Based Test for Weekday Count Accuracy (Property 1)": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416570485
+      }
+    ],
+    "25.* Write Property-Based Test for Date Selection Idempotence (Property 2)": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416570717
+      }
+    ],
+    "26.* Write Property-Based Test for Selection State Independence (Property 3)": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416570947
+      }
+    ],
+    "27.* Write Property-Based Test for Combined Count Correctness (Property 4)": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416571181
+      }
+    ],
+    "28.* Write Property-Based Test for Validation Before Assignment (Property 5)": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416571392
+      }
+    ],
+    "29.* Write Integration Test for Complete Assignment Flow": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416571614
+      }
+    ],
+    "30.* Write Integration Test for Partial Success and Error Handling": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416571823
+      }
+    ],
+    "31.* Write Integration Test for Message Lifecycle (Property 9)": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416572030
+      }
+    ],
+    "32. Test Property 6: API Payload Correctness (Weekday)": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416572233
+      }
+    ],
+    "33. Test Property 7: API Payload Correctness (Manual)": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416572432
+      }
+    ],
+    "34. Test Property 8: Partial Success Handling": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416572627
+      }
+    ],
+    "35. Test Property 10: Sidebar Refresh After Assignment": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416572913
+      }
+    ],
+    "36. Verify Accessibility Compliance (WCAG 2.1 AA)": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416573276
+      }
+    ],
+    "37. Verify Performance Targets": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416573488
+      }
+    ],
+    "38. Run Full Feature Regression Test": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416573703
+      }
+    ],
+    "39. Update Component Documentation and Code Comments": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416573913
+      }
+    ],
+    "40. Create Test Documentation and User Guide": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416574137
+      }
+    ],
+    "41. Prepare for Code Review": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416574352
+      }
+    ],
+    "42. Deploy and Monitor": [
+      {
+        "executionId": "4c143590-ae7a-4ec2-9599-2e553594dd0b",
+        "chatSessionId": "sess_d96e64aa-c1e1-4ea1-ac88-fb07cb440c2d",
+        "timestamp": 1788416574602
+      }
+    ]
+  }
+}

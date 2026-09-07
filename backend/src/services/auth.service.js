@@ -1,20 +1,49 @@
-const jwt = require("jsonwebtoken");
+﻿const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 const {
   centralPool,
-  createTenantDatabase,
   initializeTenantDatabase,
   getTenantPool,
+  registerTenantConnection,
 } = require("../config/tenantDb");
 const auditLogService = require("./auditLog.service");
+const emailService = require("./email.service");
+const { createTenantProject, deleteTenantProject } = require("./neon.service");
 
 const MODULE_LABELS = {
   dashboard: "Dashboard",
   calendar: "Calendar",
   attendance: "Attendance",
+  teacher: "Teacher",
+  student: "Student",
+  employee: "Employee",
   settings: "Settings",
+  school: "School Profile",
+  academic: "Academic Calendar",
+  calendarSettings: "Calendar Settings",
+  users: "Users & Staff",
+  roles: "Roles & Permissions",
+  fees: "Fees",
+  notices: "Notices & SMS",
+  integrations: "Integrations",
+  devices: "Device Integration",
+  security: "Security",
+  departments: "Departments",
+  classrooms: "Classrooms",
+  courses: "Courses",
+  rooms: "Rooms",
+  students: "Students",
+  theme: "Theme",
+  profile: "Profile",
+  resultFormat: "Exam Setup",
+  resultSubject: "Course & Marks",
+  results: "Results",
   result_portal: "Result Portal",
+  daily_reports: "Daily Reports",
+  fee_management: "Fee Management",
+  leave_management: "Leave Management",
+  accounts: "Accounts",
 };
 
 function slugify(value) {
@@ -28,6 +57,18 @@ function slugify(value) {
 function validateSlug(slug) {
   if (!slug) return false;
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+}
+
+function normalizeDatabaseName(value) {
+  const databaseName = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!/^[a-z][a-z0-9_]{0,62}$/.test(databaseName)) {
+    throw new Error(
+      "Database name must start with a letter and contain only lowercase letters, numbers, or underscores",
+    );
+  }
+  return databaseName;
 }
 
 function normalizeModules(modules) {
@@ -297,8 +338,16 @@ async function createTenant(
   actor = {},
 ) {
   const client = await centralPool.connect();
+  let neonProjectId = null;
 
   try {
+    if (!process.env.NEON_API_KEY) {
+      throw new Error(
+        "NEON_API_KEY is required to create tenant databases on Neon",
+      );
+    }
+
+    databaseName = normalizeDatabaseName(databaseName);
     const normalizedSlug = slugify(slug || name);
     if (!validateSlug(normalizedSlug)) {
       throw new Error(
@@ -353,19 +402,25 @@ async function createTenant(
       throw new Error("Slug already exists");
     }
 
-    // Create database for tenant
-    await createTenantDatabase(databaseName);
-
-    // Generate tenant ID
     const tenantId = uuidv4();
+    let tenantConnectionString = null;
+
+    // Every tenant gets an isolated Neon project and database.
+    const neonProject = await createTenantProject({
+      projectName: `${normalizedSlug}-${Date.now()}`,
+      databaseName,
+    });
+    neonProjectId = neonProject.projectId;
+    tenantConnectionString = neonProject.connectionString;
+    registerTenantConnection(tenantId, tenantConnectionString);
 
     // Hash password
     const passwordHash = await hashPassword(password);
 
     // Insert tenant into central database
     const result = await client.query(
-      `INSERT INTO tenant (id, name, slug, email, password_hash, database_name, modules, status, is_active, package_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO tenant (id, name, slug, email, password_hash, database_name, neon_project_id, connection_string, modules, status, is_active, package_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING id, name, slug, email, database_name, modules, package_id;`,
       [
         tenantId,
@@ -374,6 +429,8 @@ async function createTenant(
         email,
         passwordHash,
         databaseName,
+        neonProjectId,
+        tenantConnectionString,
         JSON.stringify(allModules),
         "active",
         true,
@@ -426,10 +483,17 @@ async function createTenant(
       },
     });
 
-    console.log(`✅ Tenant ${name} created successfully`);
+    console.log(`âœ… Tenant ${name} created successfully`);
     return result.rows[0];
   } catch (error) {
     await client.query("ROLLBACK;");
+    if (neonProjectId) {
+      try {
+        await deleteTenantProject(neonProjectId);
+      } catch (cleanupError) {
+        console.error("Failed to clean up Neon project:", cleanupError.message);
+      }
+    }
     throw error;
   } finally {
     client.release();
@@ -444,9 +508,10 @@ async function getAllTenants() {
 
   try {
     const result = await client.query(
-      `SELECT id, name, slug, email, database_name, modules, contact_person, phone, address, status, 
-            is_active, created_at, updated_at 
-       FROM tenant 
+      `SELECT id, name, slug, email, database_name, modules, contact_person, phone, address, status,
+            is_active, created_at, updated_at
+       FROM tenant
+       WHERE status IS DISTINCT FROM 'deleted'
        ORDER BY created_at DESC;`,
     );
 
@@ -682,6 +747,149 @@ async function deleteTenant(tenantId, actor = {}) {
     });
 
     return tenant;
+  } finally {
+    client.release();
+  }
+}
+
+async function getTenantBackup(tenantId) {
+  const client = await centralPool.connect();
+
+  try {
+    const tenantResult = await client.query(
+      `SELECT id, name, slug, email, database_name, status, is_active, created_at, updated_at
+       FROM tenant
+       WHERE id = $1;`,
+      [tenantId],
+    );
+
+    if (tenantResult.rows.length === 0) {
+      throw new Error("Tenant not found");
+    }
+
+    const tenant = tenantResult.rows[0];
+    const tenantPool = getTenantPool(tenant.id, tenant.database_name);
+    const tenantDbClient = await tenantPool.connect();
+
+    try {
+      const tablesResult = await tenantDbClient.query(
+        `SELECT table_name
+         FROM information_schema.tables
+         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+         ORDER BY table_name;`,
+      );
+
+      const tables = {};
+      for (const row of tablesResult.rows) {
+        const tableName = row.table_name;
+        const safeTableName = String(tableName).trim();
+        if (!safeTableName || !/^[A-Za-z0-9_]+$/.test(safeTableName)) {
+          continue;
+        }
+
+        const data = await tenantDbClient.query(
+          `SELECT * FROM "${safeTableName}";`,
+        );
+        tables[safeTableName] = data.rows;
+      }
+
+      return {
+        tenant: {
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          email: tenant.email,
+          database_name: tenant.database_name,
+          status: tenant.status,
+          is_active: tenant.is_active,
+        },
+        exported_at: new Date().toISOString(),
+        tables,
+      };
+    } finally {
+      tenantDbClient.release();
+    }
+  } finally {
+    client.release();
+  }
+}
+
+async function permanentlyDeleteTenant(tenantId, actor = {}) {
+  const client = await centralPool.connect();
+
+  try {
+    const tenantResult = await client.query(
+      `SELECT id, name, slug, email, database_name, neon_project_id
+       FROM tenant
+       WHERE id = $1;`,
+      [tenantId],
+    );
+
+    if (tenantResult.rows.length === 0) {
+      throw new Error("Tenant not found");
+    }
+
+    const tenant = tenantResult.rows[0];
+
+    await client.query("BEGIN;");
+
+    try {
+      const deletedTenant = await client.query(
+        `DELETE FROM tenant
+         WHERE id = $1
+         RETURNING id, name, slug, email, database_name, neon_project_id;`,
+        [tenantId],
+      );
+
+      if (deletedTenant.rows.length === 0) {
+        throw new Error("Tenant not found");
+      }
+
+      await client.query("COMMIT;");
+
+      if (tenant.database_name) {
+        try {
+          await client.query(
+            `DROP DATABASE IF EXISTS "${tenant.database_name}";`,
+          );
+        } catch (dbError) {
+          console.error("Failed to drop tenant database:", dbError.message);
+        }
+      }
+
+      if (tenant.neon_project_id) {
+        try {
+          await deleteTenantProject(tenant.neon_project_id);
+        } catch (neonError) {
+          console.error("Failed to delete Neon project:", neonError.message);
+        }
+      }
+
+      if (tenantPools[tenantId]) {
+        delete tenantPools[tenantId];
+      }
+
+      await auditLogService.recordAuditEvent({
+        category: "tenant_lifecycle",
+        action: "permanently_deleted",
+        title: "Tenant permanently deleted",
+        message: `Tenant ${tenant.name} was permanently deleted from the platform and database was removed.`,
+        severity: "critical",
+        userEmail: actor.email || "system@edusphere.com",
+        userType: actor.type || actor.role || "system_admin",
+        tenantId,
+        tenantName: tenant.name,
+        metadata: {
+          deletedBy: actor.email || null,
+          databaseName: tenant.database_name,
+        },
+      });
+
+      return deletedTenant.rows[0];
+    } catch (error) {
+      await client.query("ROLLBACK;").catch(() => {});
+      throw error;
+    }
   } finally {
     client.release();
   }
@@ -973,6 +1181,254 @@ async function unifiedLogin(email, password, tenantSlug = null) {
   throw new Error("Invalid email or password");
 }
 
+const passwordResetOtpStore = new Map();
+const passwordResetVerifiedStore = new Map();
+
+function buildPasswordResetKey(email, tenantSlug = "") {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  const normalizedSlug = String(tenantSlug || "")
+    .trim()
+    .toLowerCase();
+  return `${normalizedEmail}|${normalizedSlug}`;
+}
+
+function clearPasswordResetState(email, tenantSlug = "") {
+  const key = buildPasswordResetKey(email, tenantSlug);
+  passwordResetOtpStore.delete(key);
+  passwordResetVerifiedStore.delete(key);
+}
+
+async function findPasswordResetAccount(email, tenantSlug = "") {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+
+  if (!normalizedEmail) {
+    throw new Error("Email is required");
+  }
+
+  if (tenantSlug) {
+    const normalizedSlug = slugify(tenantSlug);
+    if (!validateSlug(normalizedSlug)) {
+      throw new Error("Invalid tenant name or slug");
+    }
+
+    const client = await centralPool.connect();
+    try {
+      const result = await client.query(
+        "SELECT * FROM tenant WHERE slug = $1 AND is_active = TRUE;",
+        [normalizedSlug],
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error("No tenant account found for that tenant and email");
+      }
+
+      const tenant = result.rows[0];
+
+      if (tenant.email && tenant.email.toLowerCase() === normalizedEmail) {
+        return {
+          userType: "tenant",
+          tenant,
+          tenantId: tenant.id,
+          tenantSlug: tenant.slug,
+          databaseName: tenant.database_name,
+        };
+      }
+
+      const tenantPool = getTenantPool(tenant.id, tenant.database_name);
+      const tenantDbClient = await tenantPool.connect();
+      try {
+        const userResult = await tenantDbClient.query(
+          "SELECT * FROM tenant_users WHERE email = $1 AND is_active = TRUE;",
+          [normalizedEmail],
+        );
+
+        if (userResult.rows.length > 0) {
+          return {
+            userType: "staff",
+            tenant,
+            tenantId: tenant.id,
+            tenantSlug: tenant.slug,
+            databaseName: tenant.database_name,
+            user: userResult.rows[0],
+          };
+        }
+      } finally {
+        tenantDbClient.release();
+      }
+
+      throw new Error("No tenant account found for that tenant and email");
+    } finally {
+      client.release();
+    }
+  }
+
+  const client = await centralPool.connect();
+  try {
+    const result = await client.query(
+      "SELECT * FROM system_admin WHERE email = $1 AND is_active = TRUE;",
+      [normalizedEmail],
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error("No system admin account found for that email");
+    }
+
+    return {
+      userType: "admin",
+      admin: result.rows[0],
+    };
+  } finally {
+    client.release();
+  }
+}
+
+async function requestPasswordReset(email, tenantSlug = "") {
+  const account = await findPasswordResetAccount(email, tenantSlug);
+  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  const key = buildPasswordResetKey(email, tenantSlug);
+
+  passwordResetOtpStore.set(key, {
+    otp,
+    userType: account.userType,
+    tenantSlug: tenantSlug ? slugify(tenantSlug) : "",
+    expiresAt: Date.now() + 10 * 60 * 1000,
+  });
+
+  passwordResetVerifiedStore.delete(key);
+
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  const subject = "Password Reset OTP";
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937;">
+      <h2 style="margin-bottom: 12px;">Password Reset Request</h2>
+      <p>Your OTP for password reset is:</p>
+      <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #4f46e5; margin: 18px 0;">${otp}</p>
+      <p>This code is valid for 10 minutes.</p>
+      <p>If you did not request this, please ignore this email.</p>
+    </div>
+  `;
+
+  try {
+    await emailService.sendEmail(null, normalizedEmail, subject, html);
+  } catch (error) {
+    console.warn("Password reset email not sent:", error.message);
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Unable to send OTP email right now. Please try again.");
+    }
+  }
+
+  const response = {
+    success: true,
+    message: `Password reset OTP has been sent to ${normalizedEmail}.`,
+  };
+
+  if (process.env.NODE_ENV !== "production") {
+    response.otp = otp;
+  }
+
+  return response;
+}
+
+function verifyPasswordResetOtp(email, otp, tenantSlug = "") {
+  const key = buildPasswordResetKey(email, tenantSlug);
+  const record = passwordResetOtpStore.get(key);
+
+  if (!record) {
+    throw new Error("No password reset request found for this email");
+  }
+
+  if (Date.now() > record.expiresAt) {
+    clearPasswordResetState(email, tenantSlug);
+    throw new Error("The OTP has expired. Please request a new one.");
+  }
+
+  if (String(record.otp) !== String(otp || "").trim()) {
+    throw new Error("Invalid OTP. Please check the code and try again.");
+  }
+
+  passwordResetVerifiedStore.set(key, {
+    verifiedAt: Date.now(),
+    userType: record.userType,
+  });
+
+  return {
+    success: true,
+    message: "OTP verified successfully.",
+  };
+}
+
+async function resetPasswordWithOtp(email, otp, newPassword, tenantSlug = "") {
+  const key = buildPasswordResetKey(email, tenantSlug);
+  const record = passwordResetOtpStore.get(key);
+
+  if (!record) {
+    throw new Error("No password reset request found for this email");
+  }
+
+  if (Date.now() > record.expiresAt) {
+    clearPasswordResetState(email, tenantSlug);
+    throw new Error("The OTP has expired. Please request a new one.");
+  }
+
+  if (String(record.otp) !== String(otp || "").trim()) {
+    throw new Error("Invalid OTP. Please check the code and try again.");
+  }
+
+  if (!newPassword || String(newPassword).length < 6) {
+    throw new Error("New password must be at least 6 characters");
+  }
+
+  const account = await findPasswordResetAccount(email, tenantSlug);
+  const passwordHash = await hashPassword(newPassword);
+
+  if (account.userType === "admin") {
+    const client = await centralPool.connect();
+    try {
+      await client.query(
+        "UPDATE system_admin SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2;",
+        [passwordHash, account.admin.id],
+      );
+    } finally {
+      client.release();
+    }
+  } else if (account.userType === "tenant") {
+    const client = await centralPool.connect();
+    try {
+      await client.query(
+        "UPDATE tenant SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2;",
+        [passwordHash, account.tenant.id],
+      );
+    } finally {
+      client.release();
+    }
+  } else {
+    const tenantPool = getTenantPool(account.tenantId, account.databaseName);
+    const tenantDbClient = await tenantPool.connect();
+    try {
+      await tenantDbClient.query(
+        "UPDATE tenant_users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2;",
+        [passwordHash, account.user.id],
+      );
+    } finally {
+      tenantDbClient.release();
+    }
+  }
+
+  clearPasswordResetState(email, tenantSlug);
+
+  return {
+    success: true,
+    message:
+      "Password reset successfully. You can now sign in with your new password.",
+  };
+}
+
 /**
  * Change Password for Tenant
  */
@@ -1235,6 +1691,9 @@ module.exports = {
   tenantLogin,
   staffLogin,
   unifiedLogin,
+  requestPasswordReset,
+  verifyPasswordResetOtp,
+  resetPasswordWithOtp,
   changeTenantPassword,
   changeTenantEmail,
   changeStaffPassword,
@@ -1245,4 +1704,7 @@ module.exports = {
   updateTenant,
   updateTenantStatus,
   deleteTenant,
+  permanentlyDeleteTenant,
+  getTenantBackup,
 };
+

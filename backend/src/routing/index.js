@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const masterRouter = express.Router();
 const {
   authenticateToken,
@@ -235,6 +235,15 @@ masterRouter.use(
   requireTenant,
   attachTenantContext,
   require("./v1/dashboard.routing")
+);
+
+// Accounts - no module guard (same pattern as /fees, /departments)
+masterRouter.use(
+  "/accounts",
+  authenticateToken,
+  requireTenant,
+  attachTenantContext,
+  require("./v1/accounts.routing")
 );
 
 // Health check

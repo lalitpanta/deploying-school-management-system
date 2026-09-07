@@ -190,6 +190,38 @@ export const permanentlyDeleteTenant = async (id, token) => {
   }
 };
 
+export const backupTenant = async (id, token) => {
+  try {
+    const response = await axiosInstance.get(
+      `${AUTH_BASE}/tenant/${id}/backup`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: "blob",
+      },
+    );
+
+    const contentDisposition = response.headers?.["content-disposition"] || "";
+    const match = contentDisposition.match(/filename="?([^";]+)"?/i);
+    const fileName = match?.[1] || `tenant-${id}-backup.json`;
+
+    const blob = new Blob([response.data], { type: "application/json" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true, fileName };
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
 /**
  * Unified Login (Admin, Tenant, or Staff)
  */
@@ -198,6 +230,53 @@ export const unifiedLogin = async (email, password, tenantSlug = null) => {
     const response = await axiosInstance.post(`${AUTH_BASE}/login`, {
       email,
       password,
+      tenantSlug,
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const requestPasswordReset = async (email, tenantSlug = "") => {
+  try {
+    const response = await axiosInstance.post(`${AUTH_BASE}/password/forgot`, {
+      email,
+      tenantSlug,
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const verifyPasswordResetOtp = async (email, otp, tenantSlug = "") => {
+  try {
+    const response = await axiosInstance.post(
+      `${AUTH_BASE}/password/verify-otp`,
+      {
+        email,
+        otp,
+        tenantSlug,
+      },
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const resetPasswordWithOtp = async (
+  email,
+  otp,
+  newPassword,
+  tenantSlug = "",
+) => {
+  try {
+    const response = await axiosInstance.post(`${AUTH_BASE}/password/reset`, {
+      email,
+      otp,
+      newPassword,
       tenantSlug,
     });
     return response.data;
@@ -293,6 +372,9 @@ export default {
   tenantLogin,
   staffLogin,
   unifiedLogin,
+  requestPasswordReset,
+  verifyPasswordResetOtp,
+  resetPasswordWithOtp,
   changeTenantPassword,
   changeTenantEmail,
   changeStaffPassword,

@@ -33,6 +33,8 @@ async function initializeCentralDatabase() {
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
         database_name VARCHAR(255) UNIQUE NOT NULL,
+        neon_project_id VARCHAR(255),
+        connection_string TEXT,
         modules JSONB DEFAULT '[]'::jsonb,
         contact_person VARCHAR(255),
         phone VARCHAR(20),
@@ -43,6 +45,12 @@ async function initializeCentralDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    await client.query(
+      `ALTER TABLE tenant ADD COLUMN IF NOT EXISTS neon_project_id VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE tenant ADD COLUMN IF NOT EXISTS connection_string TEXT`,
+    );
     console.log("✅ tenant table created");
 
     console.log("🔄 Adding columns to tenant table...");
@@ -138,17 +146,39 @@ async function initializeCentralDatabase() {
     console.log("✅ Platform settings table created");
 
     console.log("🔄 Updating platform settings table with storage columns...");
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS s3_access_key_id VARCHAR(255)`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS s3_secret_access_key VARCHAR(255)`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS s3_bucket_name VARCHAR(255)`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS azure_storage_account_name VARCHAR(255)`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS azure_storage_account_key VARCHAR(255)`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS azure_container_name VARCHAR(255)`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS gcp_project_id VARCHAR(255)`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS gcp_client_email VARCHAR(255)`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS gcp_private_key TEXT`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS gcp_bucket_name VARCHAR(255)`);
-    await client.query(`ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS enable_global_storage BOOLEAN DEFAULT FALSE`);
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS s3_access_key_id VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS s3_secret_access_key VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS s3_bucket_name VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS azure_storage_account_name VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS azure_storage_account_key VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS azure_container_name VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS gcp_project_id VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS gcp_client_email VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS gcp_private_key TEXT`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS gcp_bucket_name VARCHAR(255)`,
+    );
+    await client.query(
+      `ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS enable_global_storage BOOLEAN DEFAULT FALSE`,
+    );
     console.log("✅ Platform settings table updated with storage columns");
 
     console.log(

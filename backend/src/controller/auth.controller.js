@@ -3,6 +3,9 @@ const {
   tenantLogin,
   staffLogin,
   unifiedLogin,
+  requestPasswordReset,
+  verifyPasswordResetOtp,
+  resetPasswordWithOtp,
   changeTenantPassword,
   changeTenantEmail,
   changeStaffPassword,
@@ -14,6 +17,7 @@ const {
   updateTenant,
   deleteTenant,
   permanentlyDeleteTenant,
+  getTenantBackup,
 } = require("../services/auth.service");
 
 /**
@@ -108,7 +112,8 @@ async function loginStaff(req, res) {
  */
 async function createNewTenant(req, res) {
   try {
-    const { name, email, password, databaseName, slug, modules, packageId } = req.body;
+    const { name, email, password, databaseName, slug, modules, packageId } =
+      req.body;
 
     if (!name || !email || !password || !databaseName) {
       return res.status(400).json({
@@ -274,7 +279,7 @@ async function deleteTenantController(req, res) {
 async function permanentlyDeleteTenantController(req, res) {
   try {
     const { id } = req.params;
-    const tenant = await permanentlyDeleteTenant(id);
+    const tenant = await permanentlyDeleteTenant(id, req.user || {});
     res.status(200).json({
       success: true,
       message: "Tenant permanently deleted",
@@ -285,6 +290,25 @@ async function permanentlyDeleteTenantController(req, res) {
     res.status(400).json({
       success: false,
       message: error.message || "Failed to permanently delete tenant",
+    });
+  }
+}
+
+async function backupTenantController(req, res) {
+  try {
+    const { id } = req.params;
+    const backup = await getTenantBackup(id);
+    const fileName = `${backup.tenant.slug || backup.tenant.database_name || id}-backup.json`;
+
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+
+    res.status(200).send(JSON.stringify(backup, null, 2));
+  } catch (error) {
+    console.error("Tenant backup error:", error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message || "Failed to create tenant backup",
     });
   }
 }
@@ -316,6 +340,88 @@ async function unifiedLoginController(req, res) {
     res.status(401).json({
       success: false,
       message: error.message || "Login failed",
+    });
+  }
+}
+
+async function requestPasswordResetController(req, res) {
+  try {
+    const { email, tenantSlug } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const result = await requestPasswordReset(email, tenantSlug || "");
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      ...(result.otp !== undefined ? { otp: result.otp } : {}),
+    });
+  } catch (error) {
+    console.error("Password reset request error:", error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message || "Failed to initiate password reset",
+    });
+  }
+}
+
+async function verifyPasswordResetOtpController(req, res) {
+  try {
+    const { email, otp, tenantSlug } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP are required",
+      });
+    }
+
+    const result = await verifyPasswordResetOtp(email, otp, tenantSlug || "");
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    console.error("OTP verification error:", error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message || "Failed to verify OTP",
+    });
+  }
+}
+
+async function resetPasswordWithOtpController(req, res) {
+  try {
+    const { email, otp, newPassword, tenantSlug } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, OTP, and new password are required",
+      });
+    }
+
+    const result = await resetPasswordWithOtp(
+      email,
+      otp,
+      newPassword,
+      tenantSlug || "",
+    );
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    console.error("Password reset error:", error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message || "Failed to reset password",
     });
   }
 }
@@ -530,6 +636,9 @@ module.exports = {
   loginTenant,
   loginStaff,
   unifiedLoginController,
+  requestPasswordResetController,
+  verifyPasswordResetOtpController,
+  resetPasswordWithOtpController,
   changeTenantPasswordController,
   changeTenantEmailController,
   changeStaffPasswordController,
@@ -541,4 +650,5 @@ module.exports = {
   updateTenantController,
   deleteTenantController,
   permanentlyDeleteTenantController,
+  backupTenantController,
 };

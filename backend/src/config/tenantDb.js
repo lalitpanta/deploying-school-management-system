@@ -2,24 +2,48 @@ const { Pool } = require("pg");
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 
-const useSsl = String(process.env.DB_SSL || "").toLowerCase() === "true";
+const connectionTimeoutMs = Number(
+  process.env.DB_CONNECTION_TIMEOUT_MS || process.env.DB_TIMEOUT_MS || 15000,
+);
+const useSsl =
+  String(process.env.DB_SSL || "").toLowerCase() === "true" ||
+  /sslmode=require|ssl=true/i.test(process.env.DATABASE_URL || "");
 const rejectUnauthorized =
   String(process.env.DB_SSL_REJECT_UNAUTHORIZED || "true").toLowerCase() !==
   "false";
 
+function buildPoolConfig(overrides = {}) {
+  const databaseUrl = overrides.connectionString || process.env.DATABASE_URL;
+
+  if (databaseUrl) {
+    return {
+      connectionString: databaseUrl,
+      ssl: { rejectUnauthorized },
+      min: parseInt(process.env.DB_POOL_MIN || "0", 10),
+      max: parseInt(process.env.DB_POOL_MAX || "10", 10),
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: connectionTimeoutMs,
+      ...overrides,
+    };
+  }
+
+  return {
+    host: process.env.DB_HOST || process.env.TENANT_DB_HOST || "127.0.0.1",
+    port: Number(process.env.DB_PORT || process.env.TENANT_DB_PORT || 5432),
+    database: process.env.DB_NAME || process.env.TENANT_DB_NAME || "schoolmis",
+    user: process.env.DB_USER || process.env.TENANT_DB_USER || "postgres",
+    password: process.env.DB_PASSWORD || process.env.TENANT_DB_PASSWORD || "",
+    ssl: useSsl ? { rejectUnauthorized } : false,
+    min: parseInt(process.env.DB_POOL_MIN || "0", 10),
+    max: parseInt(process.env.DB_POOL_MAX || "10", 10),
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: connectionTimeoutMs,
+    ...overrides,
+  };
+}
+
 // Central database pool (for admin and tenant metadata)
-const centralPool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  ssl: useSsl ? { rejectUnauthorized } : false,
-  min: parseInt(process.env.DB_POOL_MIN, 10),
-  max: parseInt(process.env.DB_POOL_MAX, 10),
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+const centralPool = new Pool(buildPoolConfig());
 
 // Test central connection on startup
 centralPool.connect((err, client, release) => {
@@ -33,6 +57,30 @@ centralPool.connect((err, client, release) => {
 
 // Tenant-specific pools cache
 const tenantPools = {};
+const tenantConnectionMap = new Map();
+
+function registerTenantConnection(tenantId, connectionString) {
+  if (!tenantId || !connectionString) return null;
+
+  tenantConnectionMap.set(String(tenantId), String(connectionString));
+  return String(connectionString);
+}
+
+async function loadTenantConnections() {
+  const result = await centralPool.query(
+    `SELECT id, connection_string
+     FROM tenant
+     WHERE connection_string IS NOT NULL AND connection_string <> ''`,
+  );
+
+  for (const row of result.rows) {
+    if (row.connection_string) {
+      registerTenantConnection(row.id, row.connection_string);
+    }
+  }
+
+  return tenantConnectionMap;
+}
 
 /**
  * Get or create a pool for a specific tenant database
@@ -41,21 +89,39 @@ const tenantPools = {};
  * @returns {Pool} PostgreSQL pool for the tenant
  */
 function getTenantPool(tenantId, tenantDbName) {
-  if (!tenantPools[tenantId]) {
-    tenantPools[tenantId] = new Pool({
-      host: process.env.TENANT_DB_HOST || process.env.DB_HOST,
-      port: process.env.TENANT_DB_PORT || process.env.DB_PORT,
-      database: tenantDbName,
-      user: process.env.TENANT_DB_USER || process.env.DB_USER,
-      password: process.env.TENANT_DB_PASSWORD || process.env.DB_PASSWORD,
-      ssl: useSsl ? { rejectUnauthorized } : false,
-      min: parseInt(process.env.DB_POOL_MIN, 10),
-      max: parseInt(process.env.DB_POOL_MAX, 10),
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
+  if (!tenantId) {
+    throw new Error("Tenant ID is required to create a tenant DB pool");
   }
-  return tenantPools[tenantId];
+
+  const tenantKey = String(tenantId);
+  if (!tenantPools[tenantKey]) {
+    const tenantConnectionString =
+      tenantConnectionMap.get(tenantKey) ||
+      process.env.TENANT_DATABASE_URL ||
+      process.env.DATABASE_URL;
+
+    tenantPools[tenantKey] = new Pool(
+      buildPoolConfig(
+        tenantConnectionString
+          ? { connectionString: tenantConnectionString }
+          : {
+              database: tenantDbName,
+              host:
+                process.env.TENANT_DB_HOST ||
+                process.env.DB_HOST ||
+                "127.0.0.1",
+              port: Number(
+                process.env.TENANT_DB_PORT || process.env.DB_PORT || 5432,
+              ),
+              user:
+                process.env.TENANT_DB_USER || process.env.DB_USER || "postgres",
+              password:
+                process.env.TENANT_DB_PASSWORD || process.env.DB_PASSWORD || "",
+            },
+      ),
+    );
+  }
+  return tenantPools[tenantKey];
 }
 
 /**
@@ -744,4 +810,6 @@ module.exports = {
   getTenantPool,
   createTenantDatabase,
   initializeTenantDatabase,
+  registerTenantConnection,
+  loadTenantConnections,
 };

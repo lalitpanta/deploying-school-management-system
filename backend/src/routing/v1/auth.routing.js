@@ -5,6 +5,9 @@ const {
   loginTenant,
   loginStaff,
   unifiedLoginController,
+  requestPasswordResetController,
+  verifyPasswordResetOtpController,
+  resetPasswordWithOtpController,
   changeTenantPasswordController,
   changeTenantEmailController,
   changeStaffPasswordController,
@@ -16,6 +19,7 @@ const {
   updateTenantController,
   deleteTenantController,
   permanentlyDeleteTenantController,
+  backupTenantController,
 } = require("../../controller/auth.controller");
 const {
   authenticateToken,
@@ -37,6 +41,11 @@ router.post("/staff/login", loginStaff);
 
 // Unified login (Admin, Tenant, or Staff)
 router.post("/login", unifiedLoginController);
+
+// Forgot password OTP flow
+router.post("/password/forgot", requestPasswordResetController);
+router.post("/password/verify-otp", verifyPasswordResetOtpController);
+router.post("/password/reset", resetPasswordWithOtpController);
 
 /**
  * Protected routes (require authentication)
@@ -108,12 +117,20 @@ router.delete(
   permanentlyDeleteTenantController,
 );
 
-// Delete tenant (admin only)
+// Delete tenant (admin only) - soft delete
 router.delete(
   "/tenant/:id",
   authenticateToken,
   requireAdmin,
   deleteTenantController,
+);
+
+// Download tenant backup as JSON (admin only)
+router.get(
+  "/tenant/:id/backup",
+  authenticateToken,
+  requireAdmin,
+  backupTenantController,
 );
 
 module.exports = router;

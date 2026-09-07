@@ -21,19 +21,33 @@ class CalendarDaysService {
 
       // Use the actual Gregorian start date to determine the correct starting weekday index
       // This prevents conflicts between UI labels and real calendar logic
-      const startDateAD = monthData.month_start_date_AD || monthData.month_start_date_ad || monthData.start_date;
-      if (!startDateAD) throw new Error("Month start date (AD) is required to calculate weekdays.");
-      
+      const startDateAD =
+        monthData.month_start_date_AD ||
+        monthData.month_start_date_ad ||
+        monthData.start_date;
+      if (!startDateAD)
+        throw new Error(
+          "Month start date (AD) is required to calculate weekdays.",
+        );
+
       const startDayObj = new Date(startDateAD);
       let currentDayIndex = startDayObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
       // Use Gregorian dates to calculate the total number of days in the month
       // This is much more robust than splitting BS date strings
-      const startAdStr = monthData.month_start_date_AD || monthData.month_start_date_ad || monthData.start_date;
-      const endAdStr = monthData.month_end_date_AD || monthData.month_end_date_ad || monthData.end_date;
-      
+      const startAdStr =
+        monthData.month_start_date_AD ||
+        monthData.month_start_date_ad ||
+        monthData.start_date;
+      const endAdStr =
+        monthData.month_end_date_AD ||
+        monthData.month_end_date_ad ||
+        monthData.end_date;
+
       if (!startAdStr || !endAdStr) {
-        throw new Error("Both start and end dates (AD) are required to generate calendar days.");
+        throw new Error(
+          "Both start and end dates (AD) are required to generate calendar days.",
+        );
       }
 
       const startAd = new Date(startAdStr);
@@ -41,7 +55,9 @@ class CalendarDaysService {
       const numDays = Math.round((endAd - startAd) / (1000 * 60 * 60 * 24)) + 1;
 
       if (isNaN(numDays) || numDays <= 0 || numDays > 32) {
-        throw new Error(`Invalid date range calculated: ${numDays} days. Check start/end dates.`);
+        throw new Error(
+          `Invalid date range calculated: ${numDays} days. Check start/end dates.`,
+        );
       }
 
       for (let i = 0; i < numDays; i++) {
@@ -134,13 +150,14 @@ class CalendarDaysService {
       `;
       const result = await pool.query(query, [dayTypeId, calendarDayId]);
       const updatedDay = result.rows[0];
-      
+
       if (updatedDay) {
         // Refresh the pre-calculated yearly stats
-        await pool.query('SELECT refresh_year_category_stats($1)', [updatedDay.year_id])
-          .catch(e => console.error("Stats refresh failed", e));
+        await pool
+          .query("SELECT refresh_year_category_stats($1)", [updatedDay.year_id])
+          .catch((e) => console.error("Stats refresh failed", e));
       }
-      
+
       return updatedDay || null;
     } catch (err) {
       throw new Error(`Failed to assign day type: ${err.message}`);
@@ -173,8 +190,9 @@ class CalendarDaysService {
 
       // Refresh stats once at the end for the whole year
       if (results.length > 0) {
-         await pool.query('SELECT refresh_year_category_stats($1)', [results[0].year_id])
-           .catch(e => console.error("Stats refresh failed", e));
+        await pool
+          .query("SELECT refresh_year_category_stats($1)", [results[0].year_id])
+          .catch((e) => console.error("Stats refresh failed", e));
       }
 
       return results;
@@ -235,6 +253,42 @@ class CalendarDaysService {
   getCalendarWithDates = async (monthId, dateFormat = "BS", req) => {
     try {
       const pool = req?.tenantPool || require("../config/db");
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (monthId === "whole_year" || !uuidRegex.test(monthId)) {
+        return [];
+      }
+
+      const ensureDaysQuery = `
+        INSERT INTO "calendar_days" (year_id, month_id, day_number, day_of_week)
+        SELECT
+          mc.year_id,
+          mc.id,
+          day_info.day_number,
+          TO_CHAR(day_info.day_date, 'FMDay')
+        FROM "month_class_data" mc
+        CROSS JOIN LATERAL (
+          SELECT
+            row_number() OVER (ORDER BY generated_date)::integer AS day_number,
+            generated_date::date AS day_date
+          FROM generate_series(
+            mc.month_start_date_AD::date,
+            mc.month_end_date_AD::date,
+            interval '1 day'
+          ) AS generated_date
+        ) AS day_info
+        WHERE mc.id = $1
+          AND NOT EXISTS (
+            SELECT 1
+            FROM "calendar_days" existing_day
+            WHERE existing_day.month_id = mc.id
+              AND existing_day.day_number = day_info.day_number
+          )
+      `;
+
+      // Older months may not have generated calendar_days rows yet. Create only
+      // missing rows so existing assignments remain untouched.
+      await pool.query(ensureDaysQuery, [monthId]);
       const query = `
         SELECT 
           cd.id,
@@ -257,12 +311,6 @@ class CalendarDaysService {
         WHERE cd.month_id = $1
         ORDER BY cd.day_number ASC
       `;
-      // UUID validation for monthId
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (monthId === 'whole_year' || !uuidRegex.test(monthId)) {
-        return [];
-      }
-
       const result = await pool.query(query, [monthId, dateFormat]);
       return result.rows;
     } catch (err) {
@@ -273,18 +321,24 @@ class CalendarDaysService {
   /**
    * Assign multiple day types by day_of_week
    * Example: Assign "holiday" to all Sundays and Saturdays in a month
-   * 
+   *
    * @param {string} monthId - UUID of the month (null for year-wide assignment)
    * @param {string} yearId - UUID of the year (null for month-specific assignment)
    * @param {string} dayOfWeek - Day name (e.g., "Sunday", "Monday")
    * @param {string} dayTypeId - UUID of the day type to assign
    * @param {object} req - Request object with tenantPool
-   * 
+   *
    * IMPORTANT: Either monthId or yearId must be provided, not both.
    * - If monthId is provided, assigns to all matching days in that month
    * - If yearId is provided (and monthId is null/undefined), assigns to all matching days in all months of that year
    */
-  assignDayTypeByDayOfWeek = async (monthId, yearId, dayOfWeek, dayTypeId, req) => {
+  assignDayTypeByDayOfWeek = async (
+    monthId,
+    yearId,
+    dayOfWeek,
+    dayTypeId,
+    req,
+  ) => {
     try {
       const pool = req?.tenantPool || require("../config/db");
       let query;
@@ -299,7 +353,7 @@ class CalendarDaysService {
           RETURNING *
         `;
         values = [dayTypeId, monthId, dayOfWeek];
-      } 
+      }
       // Otherwise use yearId for year-level assignment
       else if (yearId && yearId !== null) {
         query = `
@@ -311,13 +365,22 @@ class CalendarDaysService {
           RETURNING *
         `;
         values = [dayTypeId, yearId, dayOfWeek];
-      } 
+      }
       // Neither provided - this shouldn't happen due to controller validation, but guard anyway
       else {
-        throw new Error('Either monthId or yearId must be provided for weekday assignment');
+        throw new Error(
+          "Either monthId or yearId must be provided for weekday assignment",
+        );
       }
 
       const result = await pool.query(query, values);
+      if (result.rows.length > 0) {
+        await pool
+          .query("SELECT refresh_year_category_stats($1)", [
+            result.rows[0].year_id,
+          ])
+          .catch((e) => console.error("Stats refresh failed", e));
+      }
       return result.rows;
     } catch (err) {
       throw new Error(
@@ -370,6 +433,12 @@ class CalendarDaysService {
         results.push(result.rows[0]);
       }
 
+      if (results.length > 0) {
+        await pool
+          .query("SELECT refresh_year_category_stats($1)", [results[0].year_id])
+          .catch((e) => console.error("Stats refresh failed", e));
+      }
+
       return results;
     } catch (err) {
       throw new Error(`Failed to manually assign day types: ${err.message}`);
@@ -396,7 +465,7 @@ class CalendarDaysService {
   refreshYearlyStats = async (yearId, req) => {
     try {
       const pool = req?.tenantPool || require("../config/db");
-      await pool.query('SELECT refresh_year_category_stats($1)', [yearId]);
+      await pool.query("SELECT refresh_year_category_stats($1)", [yearId]);
     } catch (err) {
       throw new Error(`Failed to refresh yearly stats: ${err.message}`);
     }
